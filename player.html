@@ -4,23 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video Player</title>
-    <link rel="stylesheet" href="styles.css">
     <script src="https://www.youtube.com/iframe_api"></script>
     <script src="script.js" defer></script>
 </head>
 <body onload="loadVideo()">
 
-    <h2>Video-Player</h2>
+    <h2>Ad-Free YouTube Player</h2>
     <div id="videoContainer"></div>
+
     <div class="controls" id="controls" style="display: none;">
         <button class="btn" onclick="backward10Seconds()">⏪ Back 10s</button>
         <button class="btn pause-btn" onclick="togglePause()">⏯ Pause/Play</button>
         <button class="btn" onclick="forward10Seconds()">⏩ Forward 10s</button>
-        <button class="btn" onclick="increaseVolume()">🔊 Volume Up</button>
-        <button class="btn" onclick="decreaseVolume()">🔉 Volume Down</button>
         <button class="btn fullscreen-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
     </div>
-    
+
 </body>
 </html>
+
 
