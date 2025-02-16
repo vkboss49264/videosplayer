@@ -154,3 +154,15 @@ document.addEventListener("keydown", function (event) {
             break;
     }
 });
+document.addEventListener("DOMContentLoaded", function () {
+    let buttons = document.querySelectorAll(".video-btn");
+
+    buttons.forEach(button => {
+        button.addEventListener("click", function () {
+            let videoId = this.getAttribute("data-video-id");
+            localStorage.setItem("videoID", videoId);
+            window.location.href = "player.html"; // Redirect to player page
+        });
+    });
+});
+
