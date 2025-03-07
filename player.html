@@ -1,25 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Player</title>
-    <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="script.js" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Video Player</title>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="script.js" defer></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #111;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    #videoContainer {
+      position: relative;
+      width: 80%;
+      max-width: 800px;
+      margin: auto;
+      background: black;
+      height: 450px;
+    }
+    #videoOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      z-index: 2;
+    }
+    #progressContainer {
+      width: 80%;
+      max-width: 800px;
+      height: 5px;
+      background: #444;
+      margin: 10px auto;
+      cursor: pointer;
+    }
+    #progressBar {
+      width: 0%;
+      height: 100%;
+      background: red;
+    }
+    #timeDisplay {
+      margin-top: 5px;
+      font-size: 14px;
+    }
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    button, select {
+      padding: 8px 12px;
+      cursor: pointer;
+      border: none;
+      background: red;
+      color: white;
+      font-size: 16px;
+      border-radius: 5px;
+    }
+    button:hover {
+      background: darkred;
+    }
+    #backButton {
+      margin-top: 20px;
+      padding: 8px 15px;
+      background: #555;
+      cursor: pointer;
+      border: none;
+      color: white;
+      font-size: 16px;
+      border-radius: 5px;
+    }
+  </style>
 </head>
-<body onload="loadVideo()">
+<body>
+  <h2>Custom YouTube Video Player</h2>
 
-    <h2>Ad-Free YouTube Player</h2>
-    <div id="videoContainer"></div>
+  <div id="videoContainer" ondblclick="toggleFullscreen()">
+    <div id="ytPlayer"></div>
+    <div id="videoOverlay"></div>
+  </div>
 
-    <div class="controls" id="controls" style="display: none;">
-        <button class="btn" onclick="backward10Seconds()">⏪ Back 10s</button>
-        <button class="btn pause-btn" onclick="togglePause()">⏯ Pause/Play</button>
-        <button class="btn" onclick="forward10Seconds()">⏩ Forward 10s</button>
-        <button class="btn fullscreen-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
-    </div>
+  <div id="timeDisplay">00:00 / 00:00</div>
 
+  <div id="progressContainer" onclick="seekVideo(event)">
+    <div id="progressBar"></div>
+  </div>
+
+  <div id="controls">
+    <button onclick="backward10Seconds()">⏪ -10s</button>
+    <button onclick="togglePause()">⏯ Play/Pause</button>
+    <button onclick="forward10Seconds()">⏩ +10s</button>
+    <select id="playbackSpeed" onchange="changePlaybackSpeed()">
+      <option value="0.5">0.5x</option>
+      <option value="1" selected>1x</option>
+      <option value="1.5">1.5x</option>
+      <option value="2">2x</option>
+    </select>
+    <button onclick="toggleFullscreen()">⛶ Fullscreen</button>
+  </div>
+
+  <button id="backButton" onclick="window.location.href='index.html'">⬅ Back to Selection</button>
 </body>
 </html>
-
 
