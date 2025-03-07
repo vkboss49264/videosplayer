@@ -1,21 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select Video</title>
-    <script src="script.js" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select a Video</title>
+  <script src="script.js" defer></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #111;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    h2 {
+      margin-top: 20px;
+    }
+    .video-list {
+      margin-top: 20px;
+    }
+    .video-btn {
+      padding: 10px 15px;
+      margin: 10px;
+      border: none;
+      background: #007bff;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .video-btn:hover {
+      background: #0056b3;
+    }
+  </style>
 </head>
 <body>
-
-    <h2>Select a Video to Play</h2>
-
-    <!-- Predefined buttons for students to click -->
-    <button class="video-btn" data-video-id="dQw4w9WgXcQ">Lesson 1</button>
+  <h2>Select a Video to Play</h2>
+  <div class="video-list">
+    <button class="video-btn" data-video-id="J4OlMqUi0P4">Lesson 1</button>
     <button class="video-btn" data-video-id="3JZ_D3ELwOQ">Lesson 2</button>
     <button class="video-btn" data-video-id="L_jWHffIx5E">Lesson 3</button>
+  </div>
 
+  <script>
+    document.querySelectorAll(".video-btn").forEach(button => {
+      button.addEventListener("click", () => {
+        const videoId = button.getAttribute("data-video-id");
+        window.location.href = `player.html?videoId=${videoId}`;
+      });
+    });
+  </script>
 </body>
 </html>
+
 
 
