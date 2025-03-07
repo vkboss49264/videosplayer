@@ -1,112 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Custom Video Player</title>
-  <script src="https://www.youtube.com/iframe_api"></script>
-  <script src="script.js" defer></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background-color: #111;
-      color: white;
-      margin: 0;
-      padding: 0;
-    }
-    #videoContainer {
-      position: relative;
-      width: 80%;
-      max-width: 800px;
-      margin: auto;
-      background: black;
-      height: 450px;
-    }
-    #videoOverlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: transparent;
-      z-index: 2;
-    }
-    #progressContainer {
-      width: 80%;
-      max-width: 800px;
-      height: 5px;
-      background: #444;
-      margin: 10px auto;
-      cursor: pointer;
-    }
-    #progressBar {
-      width: 0%;
-      height: 100%;
-      background: red;
-    }
-    #timeDisplay {
-      margin-top: 5px;
-      font-size: 14px;
-    }
-    #controls {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    button, select {
-      padding: 8px 12px;
-      cursor: pointer;
-      border: none;
-      background: red;
-      color: white;
-      font-size: 16px;
-      border-radius: 5px;
-    }
-    button:hover {
-      background: darkred;
-    }
-    #backButton {
-      margin-top: 20px;
-      padding: 8px 15px;
-      background: #555;
-      cursor: pointer;
-      border: none;
-      color: white;
-      font-size: 16px;
-      border-radius: 5px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h2>Custom YouTube Video Player</h2>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
+    <h1 class="text-2xl font-bold mb-4">Playing Video</h1>
+    
+    <div class="relative w-full max-w-3xl">
+        <iframe id="videoFrame" class="w-full aspect-video rounded-lg shadow-lg" frameborder="0" allowfullscreen></iframe>
+    </div>
 
-  <div id="videoContainer" ondblclick="toggleFullscreen()">
-    <div id="ytPlayer"></div>
-    <div id="videoOverlay"></div>
-  </div>
+    <div class="mt-4 flex gap-4">
+        <button onclick="togglePlayPause()" id="playPauseBtn" class="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded">
+            Pause
+        </button>
+        <button onclick="seek(-10)" class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">
+            << 10s
+        </button>
+        <button onclick="seek(10)" class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">
+            10s >>
+        </button>
+        <button onclick="toggleFullscreen()" class="bg-yellow-500 hover:bg-yellow-700 text-white px-4 py-2 rounded">
+            Fullscreen
+        </button>
+    </div>
 
-  <div id="timeDisplay">00:00 / 00:00</div>
+    <p class="mt-4 text-lg">Time: <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span></p>
 
-  <div id="progressContainer" onclick="seekVideo(event)">
-    <div id="progressBar"></div>
-  </div>
+    <button onclick="goBack()" class="mt-4 bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded">
+        Go Back
+    </button>
 
-  <div id="controls">
-    <button onclick="backward10Seconds()">⏪ -10s</button>
-    <button onclick="togglePause()">⏯ Play/Pause</button>
-    <button onclick="forward10Seconds()">⏩ +10s</button>
-    <select id="playbackSpeed" onchange="changePlaybackSpeed()">
-      <option value="0.5">0.5x</option>
-      <option value="1" selected>1x</option>
-      <option value="1.5">1.5x</option>
-      <option value="2">2x</option>
-    </select>
-    <button onclick="toggleFullscreen()">⛶ Fullscreen</button>
-  </div>
+    <script>
+        let player;
+        
+        function onYouTubeIframeAPIReady() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const videoId = urlParams.get("videoId");
 
-  <button id="backButton" onclick="window.location.href='index.html'">⬅ Back to Selection</button>
+            if (videoId) {
+                player = new YT.Player('videoFrame', {
+                    height: '360',
+                    width: '640',
+                    videoId: videoId,
+                    playerVars: { 'autoplay': 1, 'controls': 0 },
+                    events: {
+                        'onReady': updateTime,
+                        'onStateChange': updateButton
+                    }
+                });
+            } else {
+                alert("Invalid video ID!");
+                window.location.href = "index.html";
+            }
+        }
+
+        function togglePlayPause() {
+            if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+        }
+
+        function seek(seconds) {
+            player.seekTo(player.getCurrentTime() + seconds, true);
+        }
+
+        function toggleFullscreen() {
+            const iframe = document.getElementById("videoFrame");
+            if (iframe.requestFullscreen) {
+                iframe.requestFullscreen();
+            } else if (iframe.mozRequestFullScreen) {
+                iframe.mozRequestFullScreen();
+            } else if (iframe.webkitRequestFullscreen) {
+                iframe.webkitRequestFullscreen();
+            } else if (iframe.msRequestFullscreen) {
+                iframe.msRequestFullscreen();
+            }
+        }
+
+        function updateTime() {
+            setInterval(() => {
+                document.getElementById("currentTime").innerText = formatTime(player.getCurrentTime());
+                document.getElementById("totalTime").innerText = formatTime(player.getDuration());
+            }, 1000);
+        }
+
+        function updateButton(event) {
+            document.getElementById("playPauseBtn").innerText = 
+                event.data === YT.PlayerState.PLAYING ? "Pause" : "Play";
+        }
+
+        function formatTime(seconds) {
+            let minutes = Math.floor(seconds / 60);
+            let secs = Math.floor(seconds % 60);
+            return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        document.addEventListener("keydown", function (event) {
+            switch (event.key) {
+                case " ":
+                    event.preventDefault();
+                    togglePlayPause();
+                    break;
+                case "ArrowRight":
+                    seek(5);
+                    break;
+                case "ArrowLeft":
+                    seek(-5);
+                    break;
+                case "ArrowUp":
+                    player.setVolume(player.getVolume() + 10);
+                    break;
+                case "ArrowDown":
+                    player.setVolume(player.getVolume() - 10);
+                    break;
+            }
+        });
+
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.head.appendChild(tag);
+    </script>
 </body>
-</html>
-
+            </html>
