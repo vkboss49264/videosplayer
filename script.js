@@ -1,131 +1,123 @@
-let player; // YouTube player instance
-let isFullscreen = false; // Track fullscreen mode
+let player;
+let isPlayerReady = false;
 
-// Save Video ID and Redirect to Player Page
-function saveVideoID() {
-    let videoId = document.getElementById("videoIdInput").value.trim();
-    if (videoId.length === 11) {  // YouTube Video IDs are always 11 characters
-        localStorage.setItem("videoID", videoId);
-        window.location.href = "player.html"; // Redirect to the player page
+document.addEventListener("DOMContentLoaded", () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("videoId")) {
+        let videoId = urlParams.get("videoId");
+        loadYouTubeAPI(videoId);
+    }
+
+    document.addEventListener("keydown", handleKeyboardShortcuts);
+});
+
+function loadYouTubeAPI(videoId) {
+    if (typeof YT === "undefined" || typeof YT.Player === "undefined") {
+        let tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.head.appendChild(tag);
+
+        window.onYouTubeIframeAPIReady = () => {
+            loadVideo(videoId);
+        };
     } else {
-        alert("Invalid Video ID. Please enter a correct YouTube Video ID.");
+        loadVideo(videoId);
     }
 }
 
-// Load Video from Video ID Stored in LocalStorage
-function loadVideo() {
-    let videoId = localStorage.getItem("videoID");
-
-    if (videoId) {
-        document.getElementById("videoContainer").innerHTML = `<div id="ytPlayer"></div>`; // Reset container
-
-        player = new YT.Player('ytPlayer', {
-            height: '100%',
-            width: '100%',
-            videoId: videoId,
-            playerVars: {
-                autoplay: 1,
-                modestbranding: 1,
-                rel: 0,
-                controls: 0, // Hide YouTube default controls
-                disablekb: 1,
-                fs: 0,
-                iv_load_policy: 3,
-                showinfo: 0,
-                playsinline: 1
-            },
-            events: {
-                onReady: () => {
-                    document.getElementById("controls").style.display = "flex"; // Show controls
-                    preventYouTubeClick();
-                }
+function loadVideo(videoId) {
+    player = new YT.Player("ytPlayer", {
+        height: "100%",
+        width: "100%",
+        videoId: videoId,
+        playerVars: {
+            autoplay: 1,
+            modestbranding: 1,
+            rel: 0,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            iv_load_policy: 3,
+            playsinline: 1
+        },
+        events: {
+            onReady: () => {
+                isPlayerReady = true;
+                displayVideoDuration();
+                startProgressBarUpdate();
             }
-        });
-    } else {
-        alert("No video found! Please enter a Video ID on the homepage.");
-        window.location.href = "index.html"; // Redirect to homepage
+        }
+    });
+}
+
+function displayVideoDuration() {
+    if (player && isPlayerReady) {
+        let duration = player.getDuration();
+        document.getElementById("timeDisplay").textContent = `00:00 / ${formatTime(duration)}`;
     }
 }
 
-// Forward video by 10 seconds
+function startProgressBarUpdate() {
+    setInterval(() => {
+        if (player && isPlayerReady) {
+            let currentTime = player.getCurrentTime();
+            let duration = player.getDuration();
+            document.getElementById("timeDisplay").textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+            document.getElementById("progressBar").style.width = `${(currentTime / duration) * 100}%`;
+        }
+    }, 500);
+}
+
+function seekVideo(event) {
+    let progressContainer = document.getElementById("progressContainer");
+    let seekTime = (event.offsetX / progressContainer.clientWidth) * player.getDuration();
+    player.seekTo(seekTime, true);
+}
+
 function forward10Seconds() {
-    if (player) {
-        let currentTime = player.getCurrentTime();
-        player.seekTo(currentTime + 10, true);
-    }
+    player.seekTo(player.getCurrentTime() + 10, true);
 }
 
-// Backward video by 10 seconds
 function backward10Seconds() {
-    if (player) {
-        let currentTime = player.getCurrentTime();
-        player.seekTo(Math.max(0, currentTime - 10), true);
-    }
+    player.seekTo(Math.max(0, player.getCurrentTime() - 10), true);
 }
 
-// Pause or Play Video
 function togglePause() {
-    if (player) {
-        let state = player.getPlayerState();
-        if (state === 1) { // 1 = Playing
-            player.pauseVideo();
-        } else {
-            player.playVideo();
-        }
-    }
-}
-
-// Toggle Fullscreen Mode
-function toggleFullscreen() {
-    let container = document.getElementById("videoContainer");
-    let iframe = document.querySelector("#ytPlayer");
-
-    if (!isFullscreen) {
-        container.classList.add("fullscreen");
-        if (iframe) {
-            iframe.style.width = "100vw";
-            iframe.style.height = "100vh";
-        }
-        isFullscreen = true;
-        document.querySelector(".fullscreen-btn").innerText = "🗕 Exit Fullscreen";
+    if (player.getPlayerState() === 1) {
+        player.pauseVideo();
     } else {
-        container.classList.remove("fullscreen");
-        if (iframe) {
-            iframe.style.width = "100%"; 
-            iframe.style.height = "100%";
-        }
-        isFullscreen = false;
-        document.querySelector(".fullscreen-btn").innerText = "⛶ Fullscreen";
+        player.playVideo();
     }
 }
 
-// Prevent users from clicking YouTube logo or opening video
-function preventYouTubeClick() {
-    let iframe = document.querySelector("iframe");
-    if (iframe) {
-        iframe.style.pointerEvents = "none"; // Disable clicking
+function changePlaybackSpeed() {
+    player.setPlaybackRate(parseFloat(document.getElementById("playbackSpeed").value));
+}
+
+function toggleFullscreen() {
+    let videoContainer = document.getElementById("videoContainer");
+    if (!document.fullscreenElement) {
+        videoContainer.requestFullscreen();
+    } else {
+        document.exitFullscreen();
     }
 }
 
-// Increase Volume
-function increaseVolume() {
-    if (player) {
-        let currentVolume = player.getVolume();
-        player.setVolume(Math.min(100, currentVolume + 10)); // Increase volume by 10
+function toggleMute() {
+    if (player.isMuted()) {
+        player.unMute();
+    } else {
+        player.mute();
     }
 }
 
-// Decrease Volume
-function decreaseVolume() {
-    if (player) {
-        let currentVolume = player.getVolume();
-        player.setVolume(Math.max(0, currentVolume - 10)); // Decrease volume by 10
-    }
+function adjustVolume(amount) {
+    let newVolume = Math.min(100, Math.max(0, player.getVolume() + amount));
+    player.setVolume(newVolume);
 }
 
-// Keyboard Shortcuts
-document.addEventListener("keydown", function (event) {
-    if (!player) return;
+function handleKeyboardShortcuts(event) {
+    if (!isPlayerReady) return;
 
     switch (event.key) {
         case " ":
@@ -139,30 +131,27 @@ document.addEventListener("keydown", function (event) {
             backward10Seconds();
             break;
         case "ArrowUp":
-            increaseVolume();
+            adjustVolume(10);
             break;
         case "ArrowDown":
-            decreaseVolume();
+            adjustVolume(-10);
             break;
         case "f":
+        case "F":
             toggleFullscreen();
             break;
         case "Escape":
-            if (isFullscreen) {
-                toggleFullscreen(); // Exit fullscreen when Escape key is pressed
-            }
+            if (document.fullscreenElement) document.exitFullscreen();
+            break;
+        case "m":
+        case "M":
+            toggleMute();
             break;
     }
-});
-document.addEventListener("DOMContentLoaded", function () {
-    let buttons = document.querySelectorAll(".video-btn");
+}
 
-    buttons.forEach(button => {
-        button.addEventListener("click", function () {
-            let videoId = this.getAttribute("data-video-id");
-            localStorage.setItem("videoID", videoId);
-            window.location.href = "player.html"; // Redirect to player page
-        });
-    });
-});
+function formatTime(time) {
+    return `${Math.floor(time / 60)}:${String(Math.floor(time % 60)).padStart(2, "0")}`;
+}
+
 
