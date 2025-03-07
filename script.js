@@ -30,18 +30,21 @@ function loadVideo(videoId) {
         videoId: videoId,
         playerVars: {
             autoplay: 1,
-            modestbranding: 1,
-            rel: 0,
-            controls: 0,
-            disablekb: 1,
-            fs: 0,
-            iv_load_policy: 3,
-            playsinline: 1
+            modestbranding: 1, // Removes YouTube logo
+            rel: 0, // Prevent related videos
+            controls: 0, // Remove UI controls (including share)
+            disablekb: 1, // Disable keyboard interactions
+            fs: 0, // Disable fullscreen button
+            iv_load_policy: 3, // Hide annotations
+            playsinline: 1 // Ensure inline playback on mobile
         },
         events: {
             onReady: onPlayerReady
         }
     });
+
+    // Disable user interaction on iframe
+    document.getElementById("ytPlayer").style.pointerEvents = "none";
 }
 
 function onPlayerReady() {
@@ -50,32 +53,11 @@ function onPlayerReady() {
     startProgressBarUpdate();
 }
 
-function displayVideoDuration() {
+// Video Control Functions
+function togglePause() {
     if (isPlayerReady) {
-        let duration = player.getDuration();
-        if (!isNaN(duration) && duration > 0) {
-            document.getElementById("timeDisplay").textContent = `00:00 / ${formatTime(duration)}`;
-        }
+        player.getPlayerState() === 1 ? player.pauseVideo() : player.playVideo();
     }
-}
-
-function startProgressBarUpdate() {
-    setInterval(() => {
-        if (isPlayerReady) {
-            let currentTime = player.getCurrentTime();
-            let duration = player.getDuration();
-            if (!isNaN(currentTime) && !isNaN(duration) && duration > 0) {
-                document.getElementById("timeDisplay").textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
-                document.getElementById("progressBar").style.width = `${(currentTime / duration) * 100}%`;
-            }
-        }
-    }, 500);
-}
-
-function seekVideo(event) {
-    let progressContainer = document.getElementById("progressContainer");
-    let seekTime = (event.offsetX / progressContainer.clientWidth) * player.getDuration();
-    player.seekTo(seekTime, true);
 }
 
 function forward10Seconds() {
@@ -86,25 +68,12 @@ function backward10Seconds() {
     if (isPlayerReady) player.seekTo(Math.max(0, player.getCurrentTime() - 10), true);
 }
 
-function togglePause() {
-    if (isPlayerReady) {
-        const state = player.getPlayerState();
-        state === 1 ? player.pauseVideo() : player.playVideo();
-    }
-}
-
-function changePlaybackSpeed() {
-    if (isPlayerReady) {
-        player.setPlaybackRate(parseFloat(document.getElementById("playbackSpeed").value));
-    }
-}
-
 function toggleFullscreen() {
     let videoContainer = document.getElementById("videoContainer");
     if (!document.fullscreenElement) {
-        videoContainer.requestFullscreen?.() || videoContainer.mozRequestFullScreen?.() || videoContainer.webkitRequestFullscreen?.() || videoContainer.msRequestFullscreen?.();
+        videoContainer.requestFullscreen?.();
     } else {
-        document.exitFullscreen?.() || document.mozCancelFullScreen?.() || document.webkitExitFullscreen?.() || document.msExitFullscreen?.();
+        document.exitFullscreen?.();
     }
 }
 
@@ -128,10 +97,7 @@ function handleKeyboardShortcuts(event) {
         "ArrowUp": () => adjustVolume(10),
         "ArrowDown": () => adjustVolume(-10),
         "f": toggleFullscreen,
-        "F": toggleFullscreen,
-        "Escape": () => document.fullscreenElement && document.exitFullscreen(),
-        "m": toggleMute,
-        "M": toggleMute
+        "m": toggleMute
     };
     if (actions[event.key]) {
         event.preventDefault();
@@ -140,9 +106,7 @@ function handleKeyboardShortcuts(event) {
 }
 
 function formatTime(time) {
-    let hours = Math.floor(time / 3600);
-    let minutes = Math.floor((time % 3600) / 60);
+    let minutes = Math.floor(time / 60);
     let seconds = Math.floor(time % 60);
-    return (hours > 0 ? `${hours}:` : "") + `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
-
