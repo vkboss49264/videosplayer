@@ -1,108 +1,111 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Video Player</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .dark-mode { background-color: #111; color: white; }
-    .video-container { max-width: 800px; margin: auto; text-align: center; padding: 20px; }
-    video { width: 100%; border-radius: 8px; }
-    .controls { display: flex; justify-content: space-around; align-items: center; padding: 10px; background: #222; border-radius: 5px; margin-top: 10px; }
-    button { background: #007bff; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 5px; transition: 0.3s; }
-    button:hover { background: #0056b3; }
-    .progress-bar { width: 100%; height: 5px; background: gray; cursor: pointer; position: relative; border-radius: 3px; margin-top: 10px; }
-    .progress { height: 5px; background: #007bff; width: 0%; border-radius: 3px; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Video Player</title>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="script.js" defer></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #111;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    #videoContainer {
+      position: relative;
+      width: 80%;
+      max-width: 800px;
+      margin: auto;
+      background: black;
+      height: 450px;
+    }
+    #videoOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      z-index: 2;
+    }
+    #progressContainer {
+      width: 80%;
+      max-width: 800px;
+      height: 5px;
+      background: #444;
+      margin: 10px auto;
+      cursor: pointer;
+    }
+    #progressBar {
+      width: 0%;
+      height: 100%;
+      background: red;
+    }
+    #timeDisplay {
+      margin-top: 5px;
+      font-size: 14px;
+    }
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    button, select {
+      padding: 8px 12px;
+      cursor: pointer;
+      border: none;
+      background: red;
+      color: white;
+      font-size: 16px;
+      border-radius: 5px;
+    }
+    button:hover {
+      background: darkred;
+    }
+    #backButton {
+      margin-top: 20px;
+      padding: 8px 15px;
+      background: #555;
+      cursor: pointer;
+      border: none;
+      color: white;
+      font-size: 16px;
+      border-radius: 5px;
+    }
+  </style>
 </head>
-<body class="dark-mode">
-  <div class="video-container">
-    <video id="video" controls>
-      <source id="videoSource" src="" type="video/mp4">
-      Your browser does not support the video tag.
-    </video>
-    <div class="controls">
-      <button id="playPause">▶️</button>
-      <button id="rewind">⏪ 10s</button>
-      <button id="fastForward">⏩ 10s</button>
-      <input type="range" id="volume" min="0" max="1" step="0.1" value="1">
-      <button id="fullscreen">⛶</button>
-      <select id="speed">
-        <option value="0.5">0.5x</option>
-        <option value="1" selected>1x</option>
-        <option value="1.5">1.5x</option>
-        <option value="2">2x</option>
-      </select>
-    </div>
-    <div class="progress-bar" id="progressBar">
-      <div class="progress" id="progress"></div>
-    </div>
-  </div>
+<body>
+  <h2>Custom YouTube Video Player</h2>
 
-  <script>
-    const video = document.getElementById("video");
-    const playPause = document.getElementById("playPause");
-    const rewind = document.getElementById("rewind");
-    const fastForward = document.getElementById("fastForward");
-    const volume = document.getElementById("volume");
-    const fullscreen = document.getElementById("fullscreen");
-    const speed = document.getElementById("speed");
-    const progressBar = document.getElementById("progressBar");
-    const progress = document.getElementById("progress");
+  <div id="videoContainer" ondblclick="toggleFullscreen()">
+    <div id="ytPlayer"></div>
+    <div id="videoOverlay"></div>
+  </div>
 
-    playPause.addEventListener("click", () => {
-      if (video.paused) {
-        video.play();
-        playPause.textContent = "⏸";
-      } else {
-        video.pause();
-        playPause.textContent = "▶️";
-      }
-    });
+  <div id="timeDisplay">00:00 / 00:00</div>
 
-    rewind.addEventListener("click", () => video.currentTime -= 10);
-    fastForward.addEventListener("click", () => video.currentTime += 10);
-    volume.addEventListener("input", () => video.volume = volume.value);
-    fullscreen.addEventListener("click", () => video.requestFullscreen());
-    speed.addEventListener("change", () => video.playbackRate = speed.value);
+  <div id="progressContainer" onclick="seekVideo(event)">
+    <div id="progressBar"></div>
+  </div>
 
-    video.addEventListener("timeupdate", () => {
-      const percentage = (video.currentTime / video.duration) * 100;
-      progress.style.width = percentage + "%";
-    });
+  <div id="controls">
+    <button onclick="backward10Seconds()">⏪ -10s</button>
+    <button onclick="togglePause()">⏯ Play/Pause</button>
+    <button onclick="forward10Seconds()">⏩ +10s</button>
+    <select id="playbackSpeed" onchange="changePlaybackSpeed()">
+      <option value="0.5">0.5x</option>
+      <option value="1" selected>1x</option>
+      <option value="1.5">1.5x</option>
+      <option value="2">2x</option>
+    </select>
+    <button onclick="toggleFullscreen()">⛶ Fullscreen</button>
+  </div>
 
-    progressBar.addEventListener("click", (e) => {
-      const newTime = (e.offsetX / progressBar.offsetWidth) * video.duration;
-      video.currentTime = newTime;
-    });
-
-    document.addEventListener("keydown", (event) => {
-      switch (event.key) {
-        case " ":
-          event.preventDefault();
-          playPause.click();
-          break;
-        case "ArrowRight":
-          fastForward.click();
-          break;
-        case "ArrowLeft":
-          rewind.click();
-          break;
-        case "ArrowUp":
-          video.volume = Math.min(1, video.volume + 0.1);
-          volume.value = video.volume;
-          break;
-        case "ArrowDown":
-          video.volume = Math.max(0, video.volume - 0.1);
-          volume.value = video.volume;
-          break;
-        case "f":
-          fullscreen.click();
-          break;
-      }
-    });
-  </script>
+  <button id="backButton" onclick="window.location.href='index.html'">⬅ Back to Selection</button>
 </body>
 </html>
