@@ -147,4 +147,3 @@ let minutes = Math.floor((time % 3600) / 60);
 let seconds = Math.floor(time % 60);
 return (hours > 0 ? ${hours}: : "") + ${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")};
 }
-This my script.js file
