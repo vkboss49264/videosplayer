@@ -38,19 +38,33 @@
 <body>
   <h2>Select a Video to Play</h2>
   <div class="video-list">
-    <button class="video-btn" data-video-id="J4OlMqUi0P4">Lesson 1</button>
-    <button class="video-btn" data-video-id="3JZ_D3ELwOQ">Lesson 2</button>
-    <button class="video-btn" data-video-id="L_jWHffIx5E">Lesson 3</button>
-  </div>
+    <button class="video-btn" data-video-url="https://youtu.be/Mxeqk6uFfF8?feature=shared">Lesson 1</button>
+    <button class="video-btn" data-video-url="https://youtu.be/FvZSiDNP6tk?feature=shared">Lesson 2</button>
+    <button class="video-btn" data-video-url="https://www.youtube.com/watch?v=X1M6ak4-alM">Lesson 3</button>
+</div>
 
-  <script>
+<script>
+    // Handle existing video buttons
     document.querySelectorAll(".video-btn").forEach(button => {
-      button.addEventListener("click", () => {
-        const videoId = button.getAttribute("data-video-id");
-        window.location.href = `player.html?videoId=${videoId}`;
-      });
+        button.addEventListener("click", () => {
+            const videoUrl = button.getAttribute("data-video-url");
+            const videoId = extractYouTubeID(videoUrl);
+            
+            if (videoId) {
+                window.location.href = `player.html?videoId=${videoId}`;
+            } else {
+                alert("Invalid YouTube URL!");
+            }
+        });
     });
-  </script>
+
+    // Function to extract YouTube Video ID
+    function extractYouTubeID(url) {
+        let regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+        let match = url.match(regex);
+        return match ? match[1] : null;
+    }
+</script>
 </body>
 </html>
 
