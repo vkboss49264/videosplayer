@@ -13,13 +13,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function loadYouTubeAPI(videoId) {
     if (typeof YT === "undefined" || typeof YT.Player === "undefined") {
-        let tag = document.createElement("script");
-        tag.src = "https://www.youtube.com/iframe_api";
-        document.head.appendChild(tag);
+        let script = document.createElement("script");
+        script.src = "https://www.youtube.com/iframe_api";
+        document.head.appendChild(script);
 
-        window.onYouTubeIframeAPIReady = () => {
-            loadVideo(videoId);
-        };
+        window.onYouTubeIframeAPIReady = () => loadVideo(videoId);
     } else {
         loadVideo(videoId);
     }
@@ -41,29 +39,35 @@ function loadVideo(videoId) {
             playsinline: 1
         },
         events: {
-            onReady: () => {
-                isPlayerReady = true;
-                displayVideoDuration();
-                startProgressBarUpdate();
-            }
+            onReady: onPlayerReady
         }
     });
 }
 
+function onPlayerReady() {
+    isPlayerReady = true;
+    displayVideoDuration();
+    startProgressBarUpdate();
+}
+
 function displayVideoDuration() {
-    if (player && isPlayerReady) {
+    if (isPlayerReady) {
         let duration = player.getDuration();
-        document.getElementById("timeDisplay").textContent = `00:00 / ${formatTime(duration)}`;
+        if (!isNaN(duration) && duration > 0) {
+            document.getElementById("timeDisplay").textContent = `00:00 / ${formatTime(duration)}`;
+        }
     }
 }
 
 function startProgressBarUpdate() {
     setInterval(() => {
-        if (player && isPlayerReady) {
+        if (isPlayerReady) {
             let currentTime = player.getCurrentTime();
             let duration = player.getDuration();
-            document.getElementById("timeDisplay").textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
-            document.getElementById("progressBar").style.width = `${(currentTime / duration) * 100}%`;
+            if (!isNaN(currentTime) && !isNaN(duration) && duration > 0) {
+                document.getElementById("timeDisplay").textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+                document.getElementById("progressBar").style.width = `${(currentTime / duration) * 100}%`;
+            }
         }
     }, 500);
 }
@@ -75,83 +79,70 @@ function seekVideo(event) {
 }
 
 function forward10Seconds() {
-    player.seekTo(player.getCurrentTime() + 10, true);
+    if (isPlayerReady) player.seekTo(player.getCurrentTime() + 10, true);
 }
 
 function backward10Seconds() {
-    player.seekTo(Math.max(0, player.getCurrentTime() - 10), true);
+    if (isPlayerReady) player.seekTo(Math.max(0, player.getCurrentTime() - 10), true);
 }
 
 function togglePause() {
-    if (player.getPlayerState() === 1) {
-        player.pauseVideo();
-    } else {
-        player.playVideo();
+    if (isPlayerReady) {
+        const state = player.getPlayerState();
+        state === 1 ? player.pauseVideo() : player.playVideo();
     }
 }
 
 function changePlaybackSpeed() {
-    player.setPlaybackRate(parseFloat(document.getElementById("playbackSpeed").value));
+    if (isPlayerReady) {
+        player.setPlaybackRate(parseFloat(document.getElementById("playbackSpeed").value));
+    }
 }
 
 function toggleFullscreen() {
     let videoContainer = document.getElementById("videoContainer");
     if (!document.fullscreenElement) {
-        videoContainer.requestFullscreen();
+        videoContainer.requestFullscreen?.() || videoContainer.mozRequestFullScreen?.() || videoContainer.webkitRequestFullscreen?.() || videoContainer.msRequestFullscreen?.();
     } else {
-        document.exitFullscreen();
+        document.exitFullscreen?.() || document.mozCancelFullScreen?.() || document.webkitExitFullscreen?.() || document.msExitFullscreen?.();
     }
 }
 
 function toggleMute() {
-    if (player.isMuted()) {
-        player.unMute();
-    } else {
-        player.mute();
-    }
+    if (isPlayerReady) player.isMuted() ? player.unMute() : player.mute();
 }
 
 function adjustVolume(amount) {
-    let newVolume = Math.min(100, Math.max(0, player.getVolume() + amount));
-    player.setVolume(newVolume);
+    if (isPlayerReady) {
+        let newVolume = Math.min(100, Math.max(0, player.getVolume() + amount));
+        player.setVolume(newVolume);
+    }
 }
 
 function handleKeyboardShortcuts(event) {
     if (!isPlayerReady) return;
-
-    switch (event.key) {
-        case " ":
-            event.preventDefault();
-            togglePause();
-            break;
-        case "ArrowRight":
-            forward10Seconds();
-            break;
-        case "ArrowLeft":
-            backward10Seconds();
-            break;
-        case "ArrowUp":
-            adjustVolume(10);
-            break;
-        case "ArrowDown":
-            adjustVolume(-10);
-            break;
-        case "f":
-        case "F":
-            toggleFullscreen();
-            break;
-        case "Escape":
-            if (document.fullscreenElement) document.exitFullscreen();
-            break;
-        case "m":
-        case "M":
-            toggleMute();
-            break;
+    const actions = {
+        " ": togglePause,
+        "ArrowRight": forward10Seconds,
+        "ArrowLeft": backward10Seconds,
+        "ArrowUp": () => adjustVolume(10),
+        "ArrowDown": () => adjustVolume(-10),
+        "f": toggleFullscreen,
+        "F": toggleFullscreen,
+        "Escape": () => document.fullscreenElement && document.exitFullscreen(),
+        "m": toggleMute,
+        "M": toggleMute
+    };
+    if (actions[event.key]) {
+        event.preventDefault();
+        actions[event.key]();
     }
 }
 
 function formatTime(time) {
-    return `${Math.floor(time / 60)}:${String(Math.floor(time % 60)).padStart(2, "0")}`;
+    let hours = Math.floor(time / 3600);
+    let minutes = Math.floor((time % 3600) / 60);
+    let seconds = Math.floor(time % 60);
+    return (hours > 0 ? `${hours}:` : "") + `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
-
 
