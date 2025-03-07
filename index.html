@@ -4,69 +4,128 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Select a Video</title>
-  <script src="script.js" defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background-color: #111;
-      color: white;
-      margin: 0;
-      padding: 0;
-    }
-    h2 {
-      margin-top: 20px;
-    }
-    .video-list {
-      margin-top: 20px;
-    }
-    .video-btn {
-      padding: 10px 15px;
-      margin: 10px;
-      border: none;
-      background: #007bff;
-      color: white;
-      font-size: 16px;
+    .dark-mode { background-color: #111; color: white; }
+    .video-thumbnail {
+      width: 100%;
+      max-width: 200px;
       cursor: pointer;
-      border-radius: 5px;
+      border-radius: 8px;
+      transition: transform 0.2s ease-in-out;
     }
-    .video-btn:hover {
-      background: #0056b3;
+    .video-thumbnail:hover { transform: scale(1.05); }
+    .search-bar { 
+      width: 100%; max-width: 400px; padding: 10px; font-size: 16px; 
+      border: 2px solid #007bff; background-color: #222; color: white; 
+      border-radius: 5px; outline: none; transition: all 0.3s ease-in-out;
     }
+    .search-bar:focus { border-color: #00bfff; }
+    .search-bar::placeholder { color: #aaa; }
   </style>
 </head>
-<body>
-  <h2>Select a Video to Play</h2>
-  <div class="video-list">
-    <button class="video-btn" data-video-url="https://youtu.be/Mxeqk6uFfF8?feature=shared">Lesson 1</button>
-    <button class="video-btn" data-video-url="https://youtu.be/FvZSiDNP6tk?feature=shared">Lesson 2</button>
-    <button class="video-btn" data-video-url="https://www.youtube.com/watch?v=X1M6ak4-alM">Lesson 3</button>
-</div>
+<body class="dark-mode">
+  <nav class="bg-gray-900 p-4 text-white flex justify-between items-center">
+    <div class="text-lg font-semibold">
+      <a href="index.html" class="mx-3 hover:text-blue-400 transition">Home</a>
+      <a href="favorites.html" class="mx-3 hover:text-blue-400 transition">Favorites</a>
+      <a href="history.html" class="mx-3 hover:text-blue-400 transition" id="historyBtn">History</a>
+    </div>
+    <button id="toggleDarkMode" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-500 transition">Toggle Dark Mode</button>
+  </nav>
 
-<script>
-    // Handle existing video buttons
-    document.querySelectorAll(".video-btn").forEach(button => {
-        button.addEventListener("click", () => {
-            const videoUrl = button.getAttribute("data-video-url");
-            const videoId = extractYouTubeID(videoUrl);
-            
-            if (videoId) {
-                window.location.href = `player.html?videoId=${videoId}`;
-            } else {
-                alert("Invalid YouTube URL!");
-            }
+  <div class="text-center p-6">
+    <h2 class="text-2xl font-bold mb-4">Select a Video to Play</h2>
+    <input type="text" id="searchInput" placeholder="Search videos..." class="search-bar mt-4">
+    <p id="recentVideo" class="text-gray-300 mt-3"></p>
+
+    <div class="video-list grid sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+      <div class="video-item">
+        <img src="https://img.youtube.com/vi/Mxeqk6uFfF8/0.jpg" class="video-thumbnail video-btn" data-video-url="Mxeqk6uFfF8" data-title="Lesson 1">
+        <button class="fav-btn bg-yellow-500 text-black px-3 py-2 rounded mt-2 w-full hover:bg-yellow-400 transition" data-video-url="Mxeqk6uFfF8" data-title="Lesson 1">⭐ Add to Favorites</button>
+      </div>
+      <div class="video-item">
+        <img src="https://img.youtube.com/vi/FvZSiDNP6tk/0.jpg" class="video-thumbnail video-btn" data-video-url="FvZSiDNP6tk" data-title="Lesson 2">
+        <button class="fav-btn bg-yellow-500 text-black px-3 py-2 rounded mt-2 w-full hover:bg-yellow-400 transition" data-video-url="FvZSiDNP6tk" data-title="Lesson 2">⭐ Add to Favorites</button>
+      </div>
+      <div class="video-item">
+        <img src="https://img.youtube.com/vi/X1M6ak4-alM/0.jpg" class="video-thumbnail video-btn" data-video-url="X1M6ak4-alM" data-title="Lesson 3">
+        <button class="fav-btn bg-yellow-500 text-black px-3 py-2 rounded mt-2 w-full hover:bg-yellow-400 transition" data-video-url="X1M6ak4-alM" data-title="Lesson 3">⭐ Add to Favorites</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Apply Dark Mode if enabled
+      if (localStorage.getItem("darkMode") === "enabled") {
+        document.body.classList.add("dark-mode");
+      }
+
+      // Function to add video to history (Most Recent First)
+      function addToHistory(videoTitle, videoId) {
+        let history = JSON.parse(localStorage.getItem("historyVideos")) || [];
+
+        // Remove duplicate if exists
+        history = history.filter(video => video.videoId !== videoId);
+
+        // Add new video at the beginning
+        history.unshift({ title: videoTitle, videoId });
+
+        localStorage.setItem("historyVideos", JSON.stringify(history));
+      }
+
+      // Function to add video to favorites
+      function addToFavorites(videoTitle, videoId) {
+        let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+        if (!favorites.some(fav => fav.videoId === videoId)) {
+          favorites.push({ title: videoTitle, videoId });
+          localStorage.setItem("favorites", JSON.stringify(favorites));
+          alert("Added to Favorites!");
+        } else {
+          alert("Already in Favorites!");
+        }
+      }
+
+      // Click event to play video and add to history
+      document.querySelectorAll(".video-btn").forEach(button => {
+        button.addEventListener("click", function() {
+          const videoId = this.getAttribute("data-video-url");
+          const videoTitle = this.getAttribute("data-title") || "Selected Video";  
+          if (!videoId) return;  
+
+          localStorage.setItem("lastWatched", videoTitle);
+          addToHistory(videoTitle, videoId);
+          window.location.href = `player.html?videoId=${videoId}`;
         });
-    });
+      });
 
-    // Function to extract YouTube Video ID
-    function extractYouTubeID(url) {
-        let regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-        let match = url.match(regex);
-        return match ? match[1] : null;
-    }
-</script>
+      // Right-click to add to favorites
+      document.querySelectorAll(".video-btn").forEach(button => {
+        button.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          const videoId = button.getAttribute("data-video-url");
+          const videoTitle = button.getAttribute("data-title") || "Unknown Video";  
+          if (!videoId) return;
+
+          addToFavorites(videoTitle, videoId);
+        });
+      });
+
+      // Click event for "Add to Favorites" button (For mobile users)
+      document.querySelectorAll(".fav-btn").forEach(button => {
+        button.addEventListener("click", function() {
+          const videoId = this.getAttribute("data-video-url");
+          const videoTitle = this.getAttribute("data-title") || "Unknown Video";  
+          if (!videoId) return;
+
+          addToFavorites(videoTitle, videoId);
+        });
+      });
+
+    });
+  </script>
 </body>
 </html>
-
 
 
