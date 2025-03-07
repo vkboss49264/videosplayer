@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Favorites</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .dark-mode { background-color: #111; color: white; }
+    .video-thumbnail {
+      width: 100%;
+      max-width: 200px;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: transform 0.2s ease-in-out;
+    }
+    .video-thumbnail:hover { transform: scale(1.05); }
+  </style>
+</head>
+<body class="dark-mode">
+  <nav class="bg-gray-900 p-4 text-white flex justify-between items-center">
+    <div class="text-lg font-semibold">
+      <a href="index.html" class="mx-3 hover:text-blue-400 transition">Home</a>
+      <a href="favorites.html" class="mx-3 hover:text-blue-400 transition">Favorites</a>
+      <a href="history.html" class="mx-3 hover:text-blue-400 transition">History</a>
+    </div>
+  </nav>
+
+  <div class="text-center p-6">
+    <h2 class="text-2xl font-bold mb-4">Favorite Videos</h2>
+    <div id="favoritesList" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6"></div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+      let favoritesList = document.getElementById("favoritesList");
+
+      if (favorites.length === 0) {
+        favoritesList.innerHTML = "<p class='text-gray-400'>No favorite videos yet.</p>";
+        return;
+      }
+
+      favorites.forEach(video => {
+        let videoItem = document.createElement("div");
+        videoItem.classList.add("video-item");
+
+        videoItem.innerHTML = `
+          <img src="https://img.youtube.com/vi/${video.videoId}/0.jpg" class="video-thumbnail" data-video-url="${video.videoId}">
+          <p class="mt-2">${video.title}</p>
+          <button class="remove-btn bg-red-600 text-white px-3 py-2 rounded mt-2 w-full hover:bg-red-500 transition">Remove</button>
+        `;
+
+        videoItem.querySelector(".video-thumbnail").addEventListener("click", () => {
+          window.location.href = `player.html?videoId=${video.videoId}`;
+        });
+
+        videoItem.querySelector(".remove-btn").addEventListener("click", () => {
+          removeFavorite(video.videoId);
+        });
+
+        favoritesList.appendChild(videoItem);
+      });
+
+      function removeFavorite(videoId) {
+        let updatedFavorites = favorites.filter(video => video.videoId !== videoId);
+        localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
+        location.reload(); // Refresh page to update the list
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Watch History</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .dark-mode { background-color: #111; color: white; }
+    .video-thumbnail {
+      width: 100%;
+      max-width: 200px;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: transform 0.2s ease-in-out;
+    }
+    .video-thumbnail:hover { transform: scale(1.05); }
+    .history-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body class="dark-mode">
+  <nav class="bg-gray-900 p-4 text-white flex justify-between items-center">
+    <div class="text-lg font-semibold">
+      <a href="index.html" class="mx-3 hover:text-blue-400 transition">Home</a>
+      <a href="favorites.html" class="mx-3 hover:text-blue-400 transition">Favorites</a>
+      <a href="history.html" class="mx-3 text-blue-400 transition">History</a>
+    </div>
+    <button id="clearHistory" class="bg-red-600 px-4 py-2 rounded hover:bg-red-500 transition">Clear History</button>
+  </nav>
+
+  <div class="history-container text-center p-6">
+    <h2 class="text-2xl font-bold mb-4">Watch History</h2>
+    <div id="historyList" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const historyList = document.getElementById("historyList");
+      const clearHistoryBtn = document.getElementById("clearHistory");
+
+      function loadHistory() {
+        let history = JSON.parse(localStorage.getItem("historyVideos")) || [];
+        historyList.innerHTML = ""; // Clear previous content
+
+        if (history.length === 0) {
+          historyList.innerHTML = "<p class='text-gray-400'>No history found.</p>";
+          return;
+        }
+
+        // Show most recent first (already stored in correct order)
+        history.forEach((video, index) => {
+          const videoItem = document.createElement("div");
+          videoItem.classList.add("video-item", "text-center");
+          videoItem.innerHTML = `
+            <img src="https://img.youtube.com/vi/${video.videoId}/0.jpg" class="video-thumbnail" data-video-url="${video.videoId}">
+            <p class="mt-2">${video.title}</p>
+            <button class="remove-btn bg-gray-800 text-white px-3 py-2 rounded mt-2 w-full hover:bg-gray-700 transition" data-index="${index}">Remove</button>
+          `;
+          historyList.appendChild(videoItem);
+        });
+
+        // Add event listeners to remove buttons
+        document.querySelectorAll(".remove-btn").forEach(btn => {
+          btn.addEventListener("click", function () {
+            removeFromHistory(this.dataset.index);
+          });
+        });
+
+        // Add event listeners to play video on click
+        document.querySelectorAll(".video-thumbnail").forEach(img => {
+          img.addEventListener("click", function () {
+            const videoId = this.getAttribute("data-video-url");
+            window.location.href = `player.html?videoId=${videoId}`;
+          });
+        });
+      }
+
+      function removeFromHistory(index) {
+        let history = JSON.parse(localStorage.getItem("historyVideos")) || [];
+        history.splice(index, 1);
+        localStorage.setItem("historyVideos", JSON.stringify(history));
+        loadHistory();
+      }
+
+      clearHistoryBtn.addEventListener("click", function () {
+        localStorage.removeItem("historyVideos");
+        loadHistory();
+      });
+
+      loadHistory();
+    });
+  </script>
+</body>
+</html>
