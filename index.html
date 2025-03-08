@@ -36,9 +36,16 @@
 
   <div class="text-center p-6">
     <h2 class="text-2xl font-bold mb-4">Select a Video to Play</h2>
-    <input type="text" id="searchInput" placeholder="Search videos..." class="search-bar mt-4">
+
+    <!-- Search or Paste Link Section -->
+    <div class="flex flex-col items-center">
+      <input type="text" id="searchInput" placeholder="Search or paste YouTube link..." class="search-bar mt-4">
+      <button id="playButton" class="bg-green-500 px-4 py-2 rounded mt-2 text-white hover:bg-green-400 transition">Play</button>
+    </div>
+
     <p id="recentVideo" class="text-gray-300 mt-3"></p>
 
+    <!-- Video List Section -->
     <div class="video-list grid sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
       <div class="video-item">
         <img src="https://img.youtube.com/vi/Mxeqk6uFfF8/0.jpg" class="video-thumbnail video-btn" data-video-url="Mxeqk6uFfF8" data-title="Lesson 1">
@@ -62,7 +69,7 @@
         document.body.classList.add("dark-mode");
       }
 
-      // Function to add video to history (Most Recent First)
+      // Function to add video to history
       function addToHistory(videoTitle, videoId) {
         let history = JSON.parse(localStorage.getItem("historyVideos")) || [];
 
@@ -123,9 +130,31 @@
         });
       });
 
+      // Handle Play Button Click (Search YouTube Link)
+      document.getElementById("playButton").addEventListener("click", function() {
+        const input = document.getElementById("searchInput").value.trim();
+        let videoId = "";
+
+        if (input.includes("youtube.com") || input.includes("youtu.be")) {
+          const urlParams = new URL(input);
+          if (urlParams.hostname === "youtu.be") {
+            videoId = urlParams.pathname.substring(1);
+          } else {
+            videoId = urlParams.searchParams.get("v");
+          }
+        }
+
+        if (videoId) {
+          window.location.href = `player.html?videoId=${videoId}`;
+        } else {
+          alert("Invalid YouTube link! Please enter a valid one.");
+        }
+      });
+
     });
   </script>
 </body>
 </html>
+
 
 
