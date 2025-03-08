@@ -3,9 +3,145 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Custom Video Player</title>
+  <title>Custom YouTube Video Player</title>
   <script src="https://www.youtube.com/iframe_api"></script>
-  <script src="script.js" defer></script>
+  <script defer>
+    let player;
+    let isPlayerReady = false;
+    let tapCount = 0;
+    let tapTimeout;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has("videoId")) {
+            let videoId = urlParams.get("videoId");
+            loadYouTubeAPI(videoId);
+        }
+        document.addEventListener("keydown", handleKeyboardShortcuts);
+        document.getElementById("videoOverlay").addEventListener("click", handleTap);
+        document.getElementById("progressContainer").addEventListener("click", seekVideo);
+    });
+
+    function loadYouTubeAPI(videoId) {
+        if (typeof YT === "undefined" || typeof YT.Player === "undefined") {
+            let script = document.createElement("script");
+            script.src = "https://www.youtube.com/iframe_api";
+            document.head.appendChild(script);
+            window.onYouTubeIframeAPIReady = () => loadVideo(videoId);
+        } else {
+            loadVideo(videoId);
+        }
+    }
+
+    function loadVideo(videoId) {
+        player = new YT.Player("ytPlayer", {
+            height: "100%",
+            width: "100%",
+            videoId: videoId,
+            playerVars: {
+                autoplay: 1,
+                modestbranding: 1,
+                rel: 0,
+                controls: 0,
+                disablekb: 1,
+                fs: 0,
+                iv_load_policy: 3,
+                playsinline: 1
+            },
+            events: {
+                onReady: onPlayerReady
+            }
+        });
+    }
+
+    function onPlayerReady() {
+        isPlayerReady = true;
+        updateProgressBar();
+    }
+
+    function updateProgressBar() {
+        setInterval(() => {
+            if (isPlayerReady) {
+                let currentTime = player.getCurrentTime();
+                let duration = player.getDuration();
+                document.getElementById("timeDisplay").textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+                document.getElementById("progressBar").style.width = `${(currentTime / duration) * 100}%`;
+            }
+        }, 500);
+    }
+
+    function seekVideo(event) {
+        if (!isPlayerReady) return;
+        let progressContainer = document.getElementById("progressContainer");
+        let rect = progressContainer.getBoundingClientRect();
+        let offsetX = event.clientX - rect.left;
+        let percentage = offsetX / rect.width;
+        let duration = player.getDuration();
+        let newTime = duration * percentage;
+        player.seekTo(newTime, true);
+    }
+
+    function handleTap(event) {
+        tapCount++;
+        clearTimeout(tapTimeout);
+        tapTimeout = setTimeout(() => {
+            let touchX = event.clientX || event.changedTouches?.[0]?.clientX;
+            let screenWidth = window.innerWidth;
+
+            if (tapCount === 1) {
+                togglePause();
+            } else if (tapCount === 2) {
+                if (touchX < screenWidth / 2) {
+                    backward10Seconds();
+                } else {
+                    forward10Seconds();
+                }
+            } else if (tapCount >= 3) {
+                toggleFullscreen();
+            }
+            tapCount = 0;
+        }, 300);
+    }
+
+    function handleKeyboardShortcuts(event) {
+        if (!isPlayerReady) return;
+        switch (event.key) {
+            case " ": event.preventDefault(); togglePause(); break;
+            case "ArrowRight": forward10Seconds(); break;
+            case "ArrowLeft": backward10Seconds(); break;
+            case "ArrowUp": increaseVolume(); break;
+            case "ArrowDown": decreaseVolume(); break;
+            case "f": toggleFullscreen(); break;
+        }
+    }
+
+    function togglePause() {
+        if (isPlayerReady) {
+            let state = player.getPlayerState();
+            state === 1 ? player.pauseVideo() : player.playVideo();
+        }
+    }
+
+    function toggleFullscreen() {
+        let videoContainer = document.getElementById("videoContainer");
+        if (!document.fullscreenElement) {
+            videoContainer.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    function changePlaybackSpeed() {
+        let speed = document.getElementById("speedSelect").value;
+        player.setPlaybackRate(parseFloat(speed));
+    }
+
+    function forward10Seconds() { player.seekTo(player.getCurrentTime() + 10, true); }
+    function backward10Seconds() { player.seekTo(player.getCurrentTime() - 10, true); }
+    function increaseVolume() { player.setVolume(Math.min(player.getVolume() + 10, 100)); }
+    function decreaseVolume() { player.setVolume(Math.max(player.getVolume() - 10, 0)); }
+    function formatTime(time) { return new Date(time * 1000).toISOString().substr(11, 8); }
+  </script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -15,14 +151,19 @@
       margin: 0;
       padding: 0;
     }
+
     #videoContainer {
       position: relative;
-      width: 80%;
+      width: 90%;
       max-width: 800px;
       margin: auto;
       background: black;
-      height: 450px;
+      height: 45vh;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(255, 255, 255, 0.2);
     }
+
     #videoOverlay {
       position: absolute;
       top: 0;
@@ -32,47 +173,31 @@
       background: transparent;
       z-index: 2;
     }
+
     #progressContainer {
-      width: 80%;
+      width: 90%;
       max-width: 800px;
       height: 5px;
       background: #444;
       margin: 10px auto;
       cursor: pointer;
+      border-radius: 5px;
     }
+
     #progressBar {
       width: 0%;
       height: 100%;
       background: red;
+      border-radius: 5px;
+      transition: width 0.3s ease-in-out;
     }
-    #timeDisplay {
-      margin-top: 5px;
-      font-size: 14px;
-    }
-    #controls {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    button, select {
-      padding: 8px 12px;
+
+    .control-btn {
+      padding: 10px;
+      margin: 10px;
       cursor: pointer;
       border: none;
       background: red;
-      color: white;
-      font-size: 16px;
-      border-radius: 5px;
-    }
-    button:hover {
-      background: darkred;
-    }
-    #backButton {
-      margin-top: 20px;
-      padding: 8px 15px;
-      background: #555;
-      cursor: pointer;
-      border: none;
       color: white;
       font-size: 16px;
       border-radius: 5px;
@@ -81,31 +206,27 @@
 </head>
 <body>
   <h2>Custom YouTube Video Player</h2>
-
-  <div id="videoContainer" ondblclick="toggleFullscreen()">
+  <div id="videoContainer">
     <div id="ytPlayer"></div>
     <div id="videoOverlay"></div>
   </div>
-
   <div id="timeDisplay">00:00 / 00:00</div>
+  <div id="progressContainer"><div id="progressBar"></div></div>
 
-  <div id="progressContainer" onclick="seekVideo(event)">
-    <div id="progressBar"></div>
-  </div>
+  <!-- Fullscreen Button -->
+  <button class="control-btn" onclick="toggleFullscreen()">Fullscreen</button>
 
-  <div id="controls">
-    <button onclick="backward10Seconds()">⏪ -10s</button>
-    <button onclick="togglePause()">⏯ Play/Pause</button>
-    <button onclick="forward10Seconds()">⏩ +10s</button>
-    <select id="playbackSpeed" onchange="changePlaybackSpeed()">
-      <option value="0.5">0.5x</option>
-      <option value="1" selected>1x</option>
-      <option value="1.5">1.5x</option>
-      <option value="2">2x</option>
-    </select>
-    <button onclick="toggleFullscreen()">⛶ Fullscreen</button>
-  </div>
-
-  <button id="backButton" onclick="window.location.href='index.html'">⬅ Back to Selection</button>
+  <!-- Playback Speed Selector -->
+  <label for="speedSelect">Speed:</label>
+  <select id="speedSelect" class="control-btn" onchange="changePlaybackSpeed()">
+    <option value="0.25">0.25x</option>
+    <option value="0.5">0.5x</option>
+    <option value="0.75">0.75x</option>
+    <option value="1" selected>1x (Normal)</option>
+    <option value="1.25">1.25x</option>
+    <option value="1.5">1.5x</option>
+    <option value="2">2x</option>
+  </select>
 </body>
 </html>
+
